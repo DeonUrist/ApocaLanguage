@@ -1,0 +1,9 @@
+bin/
+obj/
+*.dll
+*.pdb
+*.cfg
+LogOutput.log
+_*.json
+_dump_where.txt
+_textures/
