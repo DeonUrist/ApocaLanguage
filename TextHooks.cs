@@ -218,6 +218,7 @@ namespace ApocaLanguage
         /// [Font size] setting for languages drawn with the game's own text (overlay languages scale in Overlays.Sync).
         private static void ApplySize(Text t, Rec r, LanguageInfo lang)
         {
+            if (Cursor.Is(t)) { RestoreSize(t, r); return; }   // sized by Cursor.Tick
             float k = lang != null ? lang.FontSize * Plugin.UserSize(lang.Code) : 1f;
             if (Math.Abs(k - 1f) < 0.001f) { RestoreSize(t, r); return; }
             if (!r.Sized) { r.OrigSize = t.fontSize; r.OrigMin = t.resizeTextMinSize; r.OrigMax = t.resizeTextMaxSize; r.Sized = true; }
@@ -303,6 +304,13 @@ namespace ApocaLanguage
         }
 
         /// English original of what component c shows (for the dump).
+        /// Does t currently show a translation made by this mod?
+        public static bool IsTranslated(Text t)
+        {
+            Rec r;
+            return t != null && _recs.TryGetValue(t.GetInstanceID(), out r) && r.Shown == t.text;
+        }
+
         public static string OriginalOf(Component c)
         {
             if (c == null) return null;

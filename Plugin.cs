@@ -21,7 +21,7 @@ namespace ApocaLanguage
     {
         public const string GUID = "com.denis.apocalypter.apocalanguage";
         public const string NAME = "ApocaLanguage";
-        public const string VERSION = "1.3.0";
+        public const string VERSION = "1.4.0";
 
         public static ManualLogSource Log;
         public static ConfigEntry<string> LanguageEntry;
@@ -34,6 +34,18 @@ namespace ApocaLanguage
         private static float _sizeChangedAt = -1f;
         public static readonly System.Collections.Generic.Dictionary<string, ConfigEntry<float>> SizeEntries =
             new System.Collections.Generic.Dictionary<string, ConfigEntry<float>>(StringComparer.OrdinalIgnoreCase);
+
+        public static readonly System.Collections.Generic.Dictionary<string, ConfigEntry<float>> CursorEntries =
+            new System.Collections.Generic.Dictionary<string, ConfigEntry<float>>(StringComparer.OrdinalIgnoreCase);
+
+        /// [Cursor text size] <LANG>, 1 when unset.
+        public static float CursorSize(string code)
+        {
+            ConfigEntry<float> e;
+            if (code == null || !CursorEntries.TryGetValue(code, out e)) return 1f;
+            var v = e.Value;
+            return v < 0.5f ? 0.5f : v > 3f ? 3f : v;
+        }
 
         /// [Font size] <LANG> from the config (Mods menu), 1 when unset.
         public static float UserSize(string code)
@@ -58,6 +70,10 @@ namespace ApocaLanguage
             ShowButton = Config.Bind("General", "ShowLanguageButton", true, "Language button in the bottom-right corner of the title screen and the ESC menu");
             foreach (var l in Translator.Languages)
             {
+                var ce = Config.Bind("Cursor text size", l.Code, 1.0f, new ConfigDescription(l.DisplayName
+                    + ": size of the texts at the cursor when looking at things (item names, Take: F ...), on top of [Font size] (1 = normal)",
+                    new AcceptableValueRange<float>(0.5f, 3.0f)));
+                CursorEntries[l.Code] = ce;
                 if (l.IsEnglish) continue;
                 var e = Config.Bind("Font size", l.Code, 1.0f, new ConfigDescription(l.DisplayName + ": size of the translated text (1 = normal)",
                     new AcceptableValueRange<float>(0.5f, 2.0f)));
@@ -207,7 +223,11 @@ namespace ApocaLanguage
     public class Runner : MonoBehaviour
     {
         private void Update() { Plugin.Tick(); }
-        private void LateUpdate() { try { Overlays.Sync(); } catch (Exception e) { Plugin.Log.LogWarning("Overlays: " + e.Message); } }
+        private void LateUpdate()
+        {
+            try { Cursor.Tick(); } catch (Exception e) { Plugin.Log.LogWarning("Cursor text: " + e.Message); }
+            try { Overlays.Sync(); } catch (Exception e) { Plugin.Log.LogWarning("Overlays: " + e.Message); }
+        }
         private void OnApplicationQuit() { Plugin.OnQuit(); }
     }
 

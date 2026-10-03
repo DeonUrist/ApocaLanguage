@@ -108,6 +108,7 @@ Use `ExportUiTextures` (below) to get the originals and their names.
 | General | `Language` | `EN` | current language (`EN` + the installed folders) |
 | General | `ShowLanguageButton` | `true` | the button in the title/ESC menu |
 | Font size | `<LANG>` | `1.0` | text size of that language, 0.5 … 2 (slider in the Mods menu, applies at once; multiplies font.json `size`) |
+| Cursor text size | `<LANG>` (also `EN`) | `1.0` | extra size, 0.5 … 3, for the texts at the cursor when looking at things in the world (item names, "Take: F", "grab: lmb", trailer prompts) — on top of Font size |
 | Translators | `CollectStrings` | `false` | see above |
 | Translators | `DumpAllTexts` | `false` | see above (switches itself off) |
 | Translators | `ExportUiTextures` | `false` | see above (switches itself off) |
