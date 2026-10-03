@@ -60,7 +60,7 @@ Use `ExportUiTextures` (below) to get the originals and their names.
 | Setting | What it does |
 |---|---|
 | `CollectStrings` | While on, every English text that appears on screen is added to `_collected.json`; the ones without a translation in the current language go to `<LANG>\_missing.json` (empty values, ready to fill and paste). |
-| `DumpAllTexts` | One shot: every text of the loaded game, also hidden menus and prefabs, item names, PlayMaker text-action literals → `_dump.json` (+ `_dump_where.txt`: where each text is used, `<LANG>\_untranslated.json`: what is still missing). Load a save first so the world is loaded. |
+| `DumpAllTexts` | One shot: every text of the loaded game, also hidden menus and prefabs, item names, PlayMaker text-action literals → `_dump.json` (+ `_dump_where.txt`: where each text is used, `<LANG>\_untranslated.json`: what is still missing). Each run is merged into the previous files, so dump once on the title screen and once in a loaded game. Save-slot labels (the player's save names) are left out. |
 | `ExportUiTextures` | One shot: the UI pictures as PNG → `_textures\` (+ `_where_used.txt`). |
 
 ## Config

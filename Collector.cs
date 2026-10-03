@@ -37,6 +37,7 @@ namespace ApocaLanguage
             if (string.IsNullOrEmpty(s)) return null;
             s = s.Trim();
             if (s.Length < 2 || s.Length > 4000 || !Translator.HasLetter(s)) return null;
+            if (s.IndexOf("(Seed: ", StringComparison.Ordinal) >= 0) return null;   // save slot labels = the player's save names
             List<string> nums;
             var tpl = Translator.Template(s, out nums);
             return tpl ?? s;
@@ -130,9 +131,16 @@ namespace ApocaLanguage
         }
 
         // ------------------------------------------------------------ one-shot dump
+        // Each run is merged into the previous _dump.json / _dump_where.txt, so the title screen and a loaded game
+        // can be dumped one after the other.
         public static void DumpAll()
         {
-            var where = new Dictionary<string, List<string>>(StringComparer.Ordinal);
+            var root = Translator.Root;
+            var jsonPath = Path.Combine(root, "_dump.json");
+            var wherePath = Path.Combine(root, "_dump_where.txt");
+            var where = ReadWhere(wherePath);
+            foreach (var k in ReadKeys(jsonPath)) if (!where.ContainsKey(k)) where[k] = new List<string>();
+            int before = where.Count;
             Action<string, string> add = (text, src) =>
             {
                 var k = KeyOf(text);
@@ -143,8 +151,8 @@ namespace ApocaLanguage
             };
 
             int comps = 0;
-            foreach (var c in Resources.FindObjectsOfTypeAll<Text>()) { if (c == null) continue; add(Texts.OriginalOf(c), Where(c)); comps++; }
-            foreach (var c in Resources.FindObjectsOfTypeAll<TMP_Text>()) { if (c == null) continue; add(Texts.OriginalOf(c), Where(c)); comps++; }
+            foreach (var c in Resources.FindObjectsOfTypeAll<Text>()) { if (c == null || Texts.IsOwn(c)) continue; add(Texts.OriginalOf(c), Where(c)); comps++; }
+            foreach (var c in Resources.FindObjectsOfTypeAll<TMP_Text>()) { if (c == null || Texts.IsOwn(c)) continue; add(Texts.OriginalOf(c), Where(c)); comps++; }
             foreach (var c in Resources.FindObjectsOfTypeAll<TextMesh>()) { if (c == null) continue; add(Texts.OriginalOf(c), Where(c)); comps++; }
 
             int fsms = 0;
@@ -159,35 +167,17 @@ namespace ApocaLanguage
                     foreach (var sv in F.Variables.StringVariables)
                         if (InterestingVar(fsm.FsmName, sv.Name)) add(sv.Value, at + " var " + sv.Name);
                     foreach (var st in F.States)
-                    {
-                        FsmStateAction[] acts;
-                        try { acts = st.Actions; } catch { continue; }
-                        if (acts == null) continue;
-                        foreach (var a in acts)
-                        {
-                            if (a == null) continue;
-                            var tn = a.GetType().Name;
-                            bool textAction = tn.IndexOf("Text", StringComparison.OrdinalIgnoreCase) >= 0 || tn.IndexOf("GUI", StringComparison.Ordinal) >= 0;
-                            foreach (var fi in a.GetType().GetFields(BindingFlags.Public | BindingFlags.Instance))
-                            {
-                                if (fi.FieldType != typeof(FsmString)) continue;
-                                if (!textAction && fi.Name.IndexOf("text", StringComparison.OrdinalIgnoreCase) < 0) continue;
-                                var fs = fi.GetValue(a) as FsmString;
-                                if (fs == null || fs.UsesVariable) continue;
-                                add(fs.Value, at + " " + st.Name + "/" + tn + "." + fi.Name);
-                            }
-                        }
-                    }
+                        foreach (var p in ActionStrings(st))
+                            add(p.Value, at + " " + st.Name + "/" + p.Key);
                 }
-                catch { }
+                catch (Exception e) { if (fsms < 3) Plugin.Log.LogWarning("Dump FSM " + fsm.FsmName + ": " + e.Message); }
             }
 
-            var root = Translator.Root;
-            Write(Path.Combine(root, "_dump.json"), "EN", where.Keys);
+            Write(jsonPath, "EN", where.Keys);
             var lines = where.OrderBy(kv => kv.Key, StringComparer.OrdinalIgnoreCase)
-                .Select(kv => kv.Key.Replace("\n", "\\n") + "\n      " + string.Join("\n      ", kv.Value.ToArray())).ToArray();
-            File.WriteAllLines(Path.Combine(root, "_dump_where.txt"), lines, new System.Text.UTF8Encoding(false));
-            Plugin.Log.LogInfo("Dump: " + where.Count + " distinct texts from " + comps + " text components and " + fsms + " FSMs -> " + Path.Combine(root, "_dump.json"));
+                .Select(kv => kv.Key.Replace("\n", "\\n") + (kv.Value.Count > 0 ? "\n      " + string.Join("\n      ", kv.Value.ToArray()) : "")).ToArray();
+            File.WriteAllLines(wherePath, lines, new System.Text.UTF8Encoding(false));
+            Plugin.Log.LogInfo("Dump: " + where.Count + " distinct texts (" + (where.Count - before) + " new) from " + comps + " text components and " + fsms + " FSMs -> " + jsonPath);
 
             // what is still untranslated in the current language
             var lang = Translator.Current;
@@ -197,6 +187,72 @@ namespace ApocaLanguage
                 Write(Path.Combine(lang.Folder, "_untranslated.json"), lang.Code, miss);
                 Plugin.Log.LogInfo("Dump: " + miss.Count + " of them have no " + lang.Code + " translation -> " + lang.Code + "\\_untranslated.json");
             }
+        }
+
+        private static Dictionary<string, List<string>> ReadWhere(string path)
+        {
+            var d = new Dictionary<string, List<string>>(StringComparer.Ordinal);
+            if (!File.Exists(path)) return d;
+            try
+            {
+                List<string> cur = null;
+                foreach (var line in File.ReadAllLines(path, System.Text.Encoding.UTF8))
+                {
+                    if (line.StartsWith("      ")) { if (cur != null && cur.Count < 8) cur.Add(line.Substring(6)); continue; }
+                    if (line.Length == 0) continue;
+                    var k = line.Replace("\\n", "\n");
+                    if (!d.TryGetValue(k, out cur)) { cur = new List<string>(); d[k] = cur; }
+                }
+            }
+            catch (Exception e) { Plugin.Log.LogWarning("Cannot read " + path + ": " + e.Message); }
+            return d;
+        }
+
+        // The string parameters of a state's actions, read from PlayMaker's serialized ActionData.
+        // (Touching FsmState.Actions on an FSM that has not started makes PlayMaker build the actions without an Fsm
+        //  and log "Error Loading Action" NullReferenceExceptions, so the actions themselves are never created here.)
+        private static readonly FieldInfo F_actionData = typeof(FsmState).GetField("actionData", BindingFlags.Instance | BindingFlags.NonPublic);
+        private static FieldInfo AD(string n) { return typeof(ActionData).GetField(n, BindingFlags.Instance | BindingFlags.NonPublic); }
+        private static readonly FieldInfo F_names = AD("actionNames"), F_start = AD("actionStartIndex"), F_pName = AD("paramName"),
+            F_pType = AD("paramDataType"), F_pPos = AD("paramDataPos"), F_fsmStr = AD("fsmStringParams"), F_str = AD("stringParams");
+
+        private static List<KeyValuePair<string, string>> ActionStrings(FsmState st)
+        {
+            var res = new List<KeyValuePair<string, string>>();
+            if (F_actionData == null || F_names == null || F_start == null || F_pName == null || F_pType == null || F_pPos == null) return res;
+            var ad = F_actionData.GetValue(st);
+            if (ad == null) return res;
+            var names = F_names.GetValue(ad) as System.Collections.IList;
+            var starts = F_start.GetValue(ad) as System.Collections.IList;
+            var pNames = F_pName.GetValue(ad) as System.Collections.IList;
+            var pTypes = F_pType.GetValue(ad) as System.Collections.IList;
+            var pPos = F_pPos.GetValue(ad) as System.Collections.IList;
+            var fsmStr = F_fsmStr != null ? F_fsmStr.GetValue(ad) as System.Collections.IList : null;
+            var strs = F_str != null ? F_str.GetValue(ad) as System.Collections.IList : null;
+            if (names == null || starts == null || pNames == null || pTypes == null || pPos == null) return res;
+            for (int k = 0; k < names.Count && k < starts.Count; k++)
+            {
+                var full = names[k] as string ?? "";
+                var tn = full.Substring(full.LastIndexOf('.') + 1);
+                bool textAction = tn.IndexOf("Text", StringComparison.OrdinalIgnoreCase) >= 0 || tn.IndexOf("GUI", StringComparison.Ordinal) >= 0;
+                int a = (int)starts[k], b = k + 1 < starts.Count ? (int)starts[k + 1] : pNames.Count;
+                for (int i = a; i < b && i < pNames.Count && i < pTypes.Count && i < pPos.Count; i++)
+                {
+                    var pn = pNames[i] as string ?? "";
+                    if (!textAction && pn.IndexOf("text", StringComparison.OrdinalIgnoreCase) < 0) continue;
+                    var type = pTypes[i] != null ? pTypes[i].ToString() : "";
+                    int pos = (int)pPos[i];
+                    string val = null;
+                    if (type == "FsmString" && fsmStr != null && pos >= 0 && pos < fsmStr.Count)
+                    {
+                        var fs = fsmStr[pos] as FsmString;
+                        if (fs != null && !fs.UseVariable) val = fs.Value;
+                    }
+                    else if (type == "String" && strs != null && pos >= 0 && pos < strs.Count) val = strs[pos] as string;
+                    if (!string.IsNullOrEmpty(val)) res.Add(new KeyValuePair<string, string>(tn + "." + pn, val));
+                }
+            }
+            return res;
         }
 
         private static bool InterestingVar(string fsmName, string varName)

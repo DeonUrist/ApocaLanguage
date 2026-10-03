@@ -33,6 +33,8 @@ namespace ApocaLanguage
         private static readonly Dictionary<int, bool> _skip = new Dictionary<int, bool>();
         private static readonly HashSet<int> Own = new HashSet<int>();
 
+        public static bool IsOwn(Component c) { return c != null && Own.Contains(c.GetInstanceID()); }
+
         /// Texts made by this mod (the language button) are never translated by the hooks.
         public static void MarkOwn(Component c)
         {
