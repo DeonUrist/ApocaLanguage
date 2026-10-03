@@ -5,7 +5,7 @@ item names, creature names, codex, trader prices — is looked up in a translati
 just before it is drawn. The game's own data (item IDs, FSM variables, saves) is never changed, so saves work in any language.
 
 Ships with **RU**, **BG**, **DE**, **FR**, **ES**, **PT**, **PL**, **HU**, **RO**, **ZH** and **JA** (Russian, Bulgarian, German, French,
-Spanish, Brazilian Portuguese, Polish, Hungarian, Romanian, Simplified Chinese, Japanese): ~720 texts each — menus, settings, controls, HUD,
+Spanish, Brazilian Portuguese, Polish, Hungarian, Romanian, Simplified Chinese, Japanese) and **ZH-TW** (Traditional Chinese, Taiwan): ~720 texts each — menus, settings, controls, HUD,
 tutorial, codex, items, creatures, traders. The tutorial pages' screenshots are pictures of the English UI and are not translated.
 
 ## Installation
@@ -19,7 +19,7 @@ BepInEx\plugins\ApocaLanguage\
     FR\FR.json
     ES\ES.json   PT\PT.json   PL\PL.json   HU\HU.json
     BG\BG.json + Oswald-Bold.ttf + font.json
-    RO\RO.json   ZH\ZH.json + font.json   JA\JA.json + font.json
+    RO\RO.json   ZH\ZH.json + font.json   ZH-TW\ZH-TW.json + font.json   JA\JA.json + font.json
 ```
 
 ## Choosing a language

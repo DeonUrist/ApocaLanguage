@@ -61,7 +61,7 @@ namespace ApocaLanguage
             { "UK", "Українська" }, { "UA", "Українська" }, { "BE", "Беларуская" }, { "CS", "Čeština" }, { "CZ", "Čeština" }, { "SK", "Slovenčina" },
             { "TR", "Türkçe" }, { "NL", "Nederlands" }, { "SV", "Svenska" }, { "NO", "Norsk" }, { "DA", "Dansk" }, { "FI", "Suomi" },
             { "HU", "Magyar" }, { "RO", "Română" }, { "BG", "Български" }, { "SR", "Српски" }, { "HR", "Hrvatski" }, { "EL", "Ελληνικά" },
-            { "ZH", "简体中文" }, { "CN", "简体中文" }, { "JA", "日本語" }, { "JP", "日本語" }, { "KO", "한국어" }, { "KK", "Қазақша" }, { "LT", "Lietuvių" },
+            { "ZH", "简体中文" }, { "CN", "简体中文" }, { "ZH-TW", "繁體中文" }, { "TW", "繁體中文" }, { "ZH-HK", "繁體中文" }, { "JA", "日本語" }, { "JP", "日本語" }, { "KO", "한국어" }, { "KK", "Қазақша" }, { "LT", "Lietuvių" },
             { "LV", "Latviešu" }, { "ET", "Eesti" }, { "KA", "ქართული" }, { "HY", "Հայերեն" }, { "AZ", "Azərbaycan" }, { "UZ", "Oʻzbek" },
         };
 
