@@ -13,7 +13,14 @@ namespace ApocaLanguage
         public string Folder;        // full path, null for EN
         public string DisplayName;   // native name shown in the dropdown
         public string Version = "";
-        public string FontFile;      // optional .ttf/.otf inside the folder
+        public string FontFile;      // optional .ttf/.otf inside the folder (or font.json "file")
+        // font.json (optional, in the language folder): how translated texts are drawn with FontFile
+        public bool Upper;           // "uppercase": every translation in capitals
+        public float FontSize = 1f;  // "size": multiplier on the game's font size
+        public float FontWidth = 1f; // "width": horizontal scale (0.85 = narrower)
+        public float Thickness;      // "thickness": 0..0.5 extra weight (TextMeshPro face dilate)
+        public float Outline;        // "outline": 0..0.5 dark outline width
+        public float Spacing;        // "spacing": extra letter spacing (TextMeshPro units, can be negative)
         public Dictionary<string, string> Map = new Dictionary<string, string>(StringComparer.Ordinal);
         public Dictionary<string, string> MapIgnoreCase = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         public Dictionary<string, string> Reverse = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -114,15 +121,18 @@ namespace ApocaLanguage
         {
             lang.Map.Clear(); lang.MapIgnoreCase.Clear(); lang.Reverse.Clear();
             lang.FontFile = null;
+            lang.Upper = false; lang.FontSize = 1f; lang.FontWidth = 1f; lang.Thickness = 0f; lang.Outline = 0f; lang.Spacing = 0f;
             if (lang.IsEnglish) return;
             lang.Stamp = StampOf(lang);
             int files = 0, entries = 0, empty = 0;
-            foreach (var f in Directory.GetFiles(lang.Folder).OrderBy(f => f, StringComparer.OrdinalIgnoreCase))
+            foreach (var f in Directory.GetFiles(lang.Folder).OrderBy(f => string.Equals(Path.GetFileName(f), "font.json", StringComparison.OrdinalIgnoreCase) ? 0 : 1)
+                                                             .ThenBy(f => f, StringComparer.OrdinalIgnoreCase))
             {
                 var n = Path.GetFileName(f);
                 var ext = Path.GetExtension(f).ToLowerInvariant();
                 if ((ext == ".ttf" || ext == ".otf") && lang.FontFile == null) { lang.FontFile = f; continue; }
                 if (ext != ".json" || n.StartsWith("_")) continue;
+                if (string.Equals(n, "font.json", StringComparison.OrdinalIgnoreCase)) { LoadFontStyle(lang, f); continue; }
                 List<KeyValuePair<string, string>> pairs;
                 try { pairs = Json.ParseFlatObject(File.ReadAllText(f, Encoding.UTF8)); }
                 catch (Exception e) { Plugin.Log.LogError(lang.Code + ": cannot read " + n + ": " + e.Message); continue; }
@@ -145,13 +155,47 @@ namespace ApocaLanguage
                     entries++;
                 }
             }
+            if (lang.Upper)   // keys stay as they are; the shown text is upper-cased in Translate
+                Plugin.Log.LogInfo(lang.Code + ": translations shown in capitals (font.json uppercase)");
             foreach (var kv in lang.Map)
             {
                 if (!lang.MapIgnoreCase.ContainsKey(kv.Key)) lang.MapIgnoreCase[kv.Key] = kv.Value;
                 if (!lang.Reverse.ContainsKey(kv.Value)) lang.Reverse[kv.Value] = kv.Key;
+                if (lang.Upper) { var up = UpperOutsideTags(kv.Value); if (!lang.Reverse.ContainsKey(up)) lang.Reverse[up] = kv.Key; }
             }
             Plugin.Log.LogInfo("Language " + lang.Code + " (" + lang.DisplayName + ") v" + lang.Version + ": " + entries + " translations from " + files + " file(s)"
                 + (empty > 0 ? ", " + empty + " still empty" : "") + (lang.FontFile != null ? ", font " + Path.GetFileName(lang.FontFile) : ""));
+        }
+
+        private static void LoadFontStyle(LanguageInfo lang, string path)
+        {
+            try
+            {
+                foreach (var kv in Json.ParseFlatObject(File.ReadAllText(path, Encoding.UTF8)))
+                {
+                    var v = (kv.Value ?? "").Trim();
+                    float x;
+                    bool num = float.TryParse(v.Replace(',', '.'), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out x);
+                    switch (kv.Key.Trim().ToLowerInvariant())
+                    {
+                        case "file":
+                            if (v.Length > 0)
+                            {
+                                var fp = Path.Combine(lang.Folder, v);
+                                if (File.Exists(fp)) lang.FontFile = fp;
+                                else Plugin.Log.LogWarning(lang.Code + "/font.json: font file \"" + v + "\" not found in the folder");
+                            }
+                            break;
+                        case "uppercase": lang.Upper = v.Equals("true", StringComparison.OrdinalIgnoreCase) || v == "1"; break;
+                        case "size": if (num && x > 0.2f && x < 5f) lang.FontSize = x; break;
+                        case "width": if (num && x > 0.3f && x < 3f) lang.FontWidth = x; break;
+                        case "thickness": if (num) lang.Thickness = Math.Max(-0.5f, Math.Min(1f, x)); break;
+                        case "outline": if (num) lang.Outline = Math.Max(0f, Math.Min(1f, x)); break;
+                        case "spacing": if (num) lang.Spacing = x; break;
+                    }
+                }
+            }
+            catch (Exception e) { Plugin.Log.LogError(lang.Code + ": cannot read font.json: " + e.Message); }
         }
 
         public static void SetCurrent(LanguageInfo lang)
@@ -188,6 +232,7 @@ namespace ApocaLanguage
             if (_cache.TryGetValue(s, out r)) return r;
             if (!HasLetter(s) || s.Length > 8000) return null;   // numbers etc. are never cached
             r = Lookup(Current, s, true);
+            if (r != null && Current.Upper) r = UpperOutsideTags(r);
             if (_cache.Count > CacheLimit) _cache.Clear();
             _cache[s] = r;
             return r;

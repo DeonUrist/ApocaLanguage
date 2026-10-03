@@ -26,26 +26,15 @@ namespace ApocaLanguage
         private static Font _system;
         private static bool _systemTried;
 
-        /// Font used for translated texts of lang that need another font.
-        public static Font For(LanguageInfo lang)
-        {
-            return UiFont(lang) ?? System();
-        }
+        /// Font for UI.Text / TextMesh texts whose font lacks letters of the translation (Arial). A font file in the
+        /// language folder is NOT used here: Unity's legacy text draws nothing with a font Windows does not know
+        /// (1.0.2/1.0.3, Cuprum) — those languages are drawn by TextMeshPro overlays instead (Overlays.cs).
+        public static Font For(LanguageInfo lang) { return System(); }
 
-        /// True when lang brings its own font that Unity's UI text can draw (then it is used for every translated text).
-        public static bool Forced(LanguageInfo lang) { return UiFont(lang) != null; }
-
-        private static Font UiFont(LanguageInfo lang)
-        {
-            return lang != null && lang.FontFile != null ? UiFromFile(lang.FontFile) : null;
-        }
+        public static bool Forced(LanguageInfo lang) { return false; }
 
         /// Font the TMP fallback asset is built from (TMP reads the file itself, so the raw path font is right there).
-        private static Font TmpSource(LanguageInfo lang)
-        {
-            if (lang != null && lang.FontFile != null) { var f = Raw(lang.FontFile); if (f != null) return f; }
-            return System();
-        }
+        private static Font TmpSource(LanguageInfo lang) { return System(); }
 
         public static Font System()
         {
@@ -90,125 +79,52 @@ namespace ApocaLanguage
             return f;
         }
 
-        private static readonly Dictionary<string, Font> _ui = new Dictionary<string, Font>(StringComparer.OrdinalIgnoreCase);
+        // ------------------------------------------------------------ TMP font asset from the language folder font
+        private static readonly Dictionary<string, TMP_FontAsset> _assetByFile = new Dictionary<string, TMP_FontAsset>(StringComparer.OrdinalIgnoreCase);
 
-        [global::System.Runtime.InteropServices.DllImport("gdi32.dll", CharSet = global::System.Runtime.InteropServices.CharSet.Unicode)]
-        private static extern int AddFontResourceEx(string lpszFilename, uint fl, IntPtr pdv);
-        private const uint FR_PRIVATE = 0x10;
-
-        /// A font made from the file that UI.Text can really draw, or null (then the game font / Arial are used).
-        private static Font UiFromFile(string path)
+        /// Dynamic TextMeshPro font asset (SDF) made from the language's font file, or null.
+        public static TMP_FontAsset LangAsset(LanguageInfo lang)
         {
-            Font f;
-            if (_ui.TryGetValue(path, out f)) return f;
-            f = null;
-            string file = Path.GetFileName(path);
-            string family = null;
-            try { family = TtfFamily(path); } catch (Exception e) { Plugin.Log.LogWarning(file + ": cannot read the font name: " + e.Message); }
-            bool installed = false;
-            try { installed = family != null && Font.GetOSInstalledFontNames().Any(n => string.Equals(n, family, StringComparison.OrdinalIgnoreCase)); } catch { }
-
-            // 1. Windows already has a font of that family (installed by the player): Unity's own OS font path draws it.
-            if (installed)
+            if (lang == null || lang.FontFile == null) return null;
+            TMP_FontAsset fa;
+            if (_assetByFile.TryGetValue(lang.FontFile, out fa)) return fa;
+            fa = null;
+            var font = Raw(lang.FontFile);
+            if (font != null)
             {
-                var os = OsFont(family);
-                if (Renders(os, file + " (installed font '" + family + "')")) f = os;
-            }
-            // 2. Register the file for this process only (nothing is installed or copied), then use it as an OS font.
-            if (f == null && family != null)
-            {
-                int added = 0;
-                try { added = AddFontResourceEx(path, FR_PRIVATE, IntPtr.Zero); } catch (Exception e) { Plugin.Log.LogWarning(file + ": AddFontResourceEx failed: " + e.Message); }
-                bool listed = false;
-                try { listed = Font.GetOSInstalledFontNames().Any(n => string.Equals(n, family, StringComparison.OrdinalIgnoreCase)); } catch { }
-                Plugin.Log.LogInfo(file + ": family '" + family + "', registered for this game session: " + (added > 0) + ", visible to Unity: " + listed);
-                if (listed)
+                try
                 {
-                    var os = OsFont(family);
-                    if (Renders(os, file + " (session font '" + family + "')")) f = os;
-                }
-            }
-            // 3. The raw file font (works when Unity can resolve it after all).
-            if (f == null)
-            {
-                var raw = Raw(path);
-                if (raw != null && installed && Renders(raw, file + " (file)")) f = raw;
-            }
-            if (f == null)
-                Plugin.Log.LogWarning(file + ": Unity's UI text cannot draw this font from the language folder (it would be invisible). "
-                    + "Translated texts keep the game font, or Arial where letters are missing. To use it, install the font in Windows "
-                    + "(right-click the file -> 'Install for all users') and restart the game; TextMeshPro texts use the file directly.");
-            else Plugin.Log.LogInfo(file + ": used for translated texts");
-            _ui[path] = f;
-            return f;
-        }
-
-        private static Font OsFont(string family)
-        {
-            try
-            {
-                var f = Font.CreateDynamicFontFromOSFont(family, 16);
-                if (f != null) { f.hideFlags = HideFlags.DontUnloadUnusedAsset; UnityEngine.Object.DontDestroyOnLoad(f); }
-                return f;
-            }
-            catch (Exception e) { Plugin.Log.LogWarning("CreateDynamicFontFromOSFont(" + family + "): " + e.Message); return null; }
-        }
-
-        /// Can Unity rasterize glyphs of f for UI text?
-        private static bool Renders(Font f, string what)
-        {
-            if (f == null) return false;
-            try
-            {
-                const string sample = "Aa";
-                f.RequestCharactersInTexture(sample, 32, FontStyle.Normal);
-                foreach (char c in sample)
-                {
-                    CharacterInfo ci;
-                    if (!f.GetCharacterInfo(c, out ci, 32, FontStyle.Normal) || (ci.advance <= 0 && ci.glyphWidth <= 0))
+                    fa = TMP_FontAsset.CreateFontAsset(font);
+                    if (fa != null)
                     {
-                        Plugin.Log.LogInfo(what + ": no glyph for '" + c + "' -> not usable");
-                        return false;
+                        fa.name = "ApocaLanguage " + font.name;
+                        fa.hideFlags = HideFlags.DontUnloadUnusedAsset;
+                        FixShader(fa);
                     }
                 }
-                var mat = f.material;
-                if (mat == null || mat.mainTexture == null) { Plugin.Log.LogInfo(what + ": no font texture -> not usable"); return false; }
-                return true;
+                catch (Exception e) { Plugin.Log.LogWarning("TextMeshPro font from " + Path.GetFileName(lang.FontFile) + " failed: " + e.Message); fa = null; }
             }
-            catch (Exception e) { Plugin.Log.LogInfo(what + ": test failed: " + e.Message); return false; }
+            Plugin.Log.LogInfo(lang.Code + ": TextMeshPro font " + (fa != null ? fa.name + " (shader " + (fa.material != null && fa.material.shader != null ? fa.material.shader.name : "none") + ")" : "could not be made"));
+            _assetByFile[lang.FontFile] = fa;
+            return fa;
         }
 
-        /// Family name (name ID 1) from a .ttf/.otf file.
-        private static string TtfFamily(string path)
+        /// The shader TMP picks may not be in the game build: borrow the one the game's own TMP fonts use.
+        private static void FixShader(TMP_FontAsset fa)
         {
-            var b = File.ReadAllBytes(path);
-            Func<int, int> u16 = o => (b[o] << 8) | b[o + 1];
-            Func<int, long> u32 = o => ((long)b[o] << 24) | ((long)b[o + 1] << 16) | ((long)b[o + 2] << 8) | b[o + 3];
-            int numTables = u16(4);
-            for (int t = 0; t < numTables; t++)
+            var mat = fa.material;
+            if (mat == null) return;
+            if (mat.shader != null && mat.shader.isSupported && mat.shader.name != "Hidden/InternalErrorShader") return;
+            foreach (var other in Resources.FindObjectsOfTypeAll<TMP_FontAsset>())
             {
-                int rec = 12 + t * 16;
-                string tag = global::System.Text.Encoding.ASCII.GetString(b, rec, 4);
-                if (tag != "name") continue;
-                int off = (int)u32(rec + 8);
-                int count = u16(off + 2), strOff = off + u16(off + 4);
-                string mac = null;
-                for (int i = 0; i < count; i++)
-                {
-                    int r = off + 6 + i * 12;
-                    int platform = u16(r), lang = u16(r + 4), nameId = u16(r + 6), len = u16(r + 8), so = u16(r + 10);
-                    if (nameId != 1) continue;
-                    if (platform == 3 && (lang == 0x409 || mac == null))
-                    {
-                        var s = global::System.Text.Encoding.BigEndianUnicode.GetString(b, strOff + so, len);
-                        if (lang == 0x409) return s;
-                        mac = s;
-                    }
-                    else if (platform == 1 && mac == null) mac = global::System.Text.Encoding.ASCII.GetString(b, strOff + so, len);
-                }
-                return mac;
+                if (other == null || other == fa || other.material == null || other.material.shader == null) continue;
+                var sh = other.material.shader;
+                if (!sh.isSupported || sh.name.IndexOf("Distance Field", StringComparison.OrdinalIgnoreCase) < 0) continue;
+                mat.shader = sh;
+                Plugin.Log.LogInfo("TMP shader borrowed from " + other.name + ": " + sh.name);
+                return;
             }
-            return null;
+            Plugin.Log.LogWarning("No usable TextMeshPro shader found");
         }
 
         /// Does font f have every non-ASCII character of s (rich-text tags ignored)?
@@ -246,6 +162,8 @@ namespace ApocaLanguage
         public static void EnsureTmpFallback(LanguageInfo lang)
         {
             if (lang == null || lang.IsEnglish) return;
+            var own = LangAsset(lang);
+            if (own != null) { AddToAll(own); return; }
             var font = TmpSource(lang);
             if (font == null) return;
             var key = lang.Code + "|" + font.GetInstanceID();

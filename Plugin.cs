@@ -21,7 +21,7 @@ namespace ApocaLanguage
     {
         public const string GUID = "com.denis.apocalypter.apocalanguage";
         public const string NAME = "ApocaLanguage";
-        public const string VERSION = "1.0.3";
+        public const string VERSION = "1.1.0";
 
         public static ManualLogSource Log;
         public static ConfigEntry<string> LanguageEntry;
@@ -96,6 +96,7 @@ namespace ApocaLanguage
             {
                 var prev = Translator.Current;
                 var lang = Translator.Find(code) ?? Translator.Languages[0];
+                Overlays.Reset();
                 Translator.SetCurrent(lang);
                 lang = Translator.Current;
                 Textures.Load(lang);
@@ -179,6 +180,7 @@ namespace ApocaLanguage
     public class Runner : MonoBehaviour
     {
         private void Update() { Plugin.Tick(); }
+        private void LateUpdate() { try { Overlays.Sync(); } catch (Exception e) { Plugin.Log.LogWarning("Overlays: " + e.Message); } }
         private void OnApplicationQuit() { Plugin.OnQuit(); }
     }
 

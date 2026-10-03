@@ -174,7 +174,10 @@ namespace ApocaLanguage
         {
             var go = UnityEngine.Object.Instantiate(template, parent);
             go.name = name;
-            foreach (var t in go.GetComponentsInChildren<Text>(true)) Texts.MarkOwn(t);
+            // a game button drawn through a font overlay: drop the copied overlay and show the copy's own text again
+            foreach (var tr in go.GetComponentsInChildren<Transform>(true))
+                if (tr != null && tr != go.transform && tr.name == Overlays.ChildName) UnityEngine.Object.DestroyImmediate(tr.gameObject);
+            foreach (var t in go.GetComponentsInChildren<Text>(true)) { Texts.MarkOwn(t); Overlays.Detach(t); t.material = null; }
             foreach (var t in go.GetComponentsInChildren<TMP_Text>(true)) Texts.MarkOwn(t);
             // strip the game's logic (PlayMaker FSMs, nested dialogs, arrows ...)
             foreach (var f in go.GetComponentsInChildren<PlayMakerFSM>(true)) UnityEngine.Object.DestroyImmediate(f);
@@ -222,6 +225,8 @@ namespace ApocaLanguage
                 if (Fonts.Forced(fontLang) || (Fonts.NeedsCheck(text) && !Fonts.Covers(baseFont, text))) f = Fonts.For(fontLang) ?? baseFont;
                 if (f != null && t.font != f) t.font = f;
                 t.text = text;
+                if (ReferenceEquals(fontLang, Translator.Current) && Overlays.For(fontLang)) { if (t.font != baseFont && baseFont != null) t.font = baseFont; Overlays.Attach(t); }
+                else Overlays.Detach(t);
             }
             foreach (var t in go.GetComponentsInChildren<TMP_Text>(true)) t.text = text;
         }

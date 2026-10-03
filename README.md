@@ -51,11 +51,36 @@ Files whose name starts with `_` are tool output and are not loaded. English (`E
 - The files are re-read automatically within 2 seconds when they change, while the game runs.
 
 ### Fonts
-If the game's font lacks a letter of the translation (Cyrillic, ä, é ...), that text is drawn with a Windows font (Arial).
-Put a `.ttf` / `.otf` file into the language folder to use that font for all translated texts of that language instead.
-Unity's UI text can only draw fonts that Windows knows: the mod registers the file for the game session and tests it; if Unity still
-cannot draw it, the log says so and the texts keep the game font / Arial (never invisible). In that case install the font in Windows
-(right-click the file → *Install for all users*) and restart the game. TextMeshPro texts use the file directly.
+If the game's font lacks a letter of the translation (ä, é, ñ …), that text is drawn with a Windows font (Arial).
+
+A language can bring its own font: put a `.ttf` / `.otf` into its folder. Unity's normal UI text cannot draw a font file that Windows
+does not know, so the translated texts of that language are drawn by **TextMeshPro** with that font instead (the original text stays in
+place but invisible). Its look is set by an optional `font.json` in the same folder:
+
+```json
+{
+  "file": "Oswald-Bold.ttf",
+  "uppercase": true,
+  "size": 1.0,
+  "width": 1.0,
+  "thickness": 0.1,
+  "outline": 0,
+  "spacing": 2
+}
+```
+
+| Key | Meaning |
+|---|---|
+| `file` | the font file in the folder (default: the first .ttf/.otf found) |
+| `uppercase` | show every translation in capitals (the game's own font has capitals only) |
+| `size` | font size multiplier (1 = the game's size) |
+| `width` | horizontal scale: below 1 = narrower letters, above 1 = wider |
+| `thickness` | extra weight, 0 … 0.5 (negative = thinner) |
+| `outline` | dark outline width, 0 … 0.5 |
+| `spacing` | extra space between letters (can be negative) |
+
+Edits to `font.json` are picked up within 2 seconds while the game runs. The RU folder ships **Oswald Bold** (SIL Open Font License,
+`Oswald-OFL.txt`).
 
 ### Pictures with text (tutorial pages, signs)
 `<LANG>\Textures\<texture name>.png` replaces the UI picture with that name while the language is active.

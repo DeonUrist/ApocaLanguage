@@ -152,6 +152,7 @@ namespace ApocaLanguage
             if (string.IsNullOrEmpty(value))
             {
                 if (r != null) { RestoreFont(c, r); _recs.Remove(id); }
+                DetachOverlay(c, r);
                 return value;
             }
             var lang = Translator.Current;
@@ -168,6 +169,7 @@ namespace ApocaLanguage
             if (t == null)
             {
                 if (Collector.On && Translator.Active) Collector.Missing(orig);
+                DetachOverlay(c, r);
                 if (r != null) { RestoreFont(c, r); _recs.Remove(id); }
                 return orig;
             }
@@ -182,6 +184,11 @@ namespace ApocaLanguage
             var ut = c as Text;
             var tm = c as TextMesh;
             if (ut == null && tm == null) return;   // TMP uses fallback font assets
+            if (ut != null)
+            {
+                if (Overlays.For(lang)) { RestoreFont(c, r); Overlays.Attach(ut); return; }   // drawn by TextMeshPro with the language's font
+                if (Overlays.Count > 0) Overlays.Detach(ut);
+            }
             Font cur = ut != null ? ut.font : tm.font;
             Font want = null;
             if (Fonts.Forced(lang)) want = Fonts.For(lang);
@@ -197,6 +204,12 @@ namespace ApocaLanguage
                 SetFont(c, want);
             }
             else if (r.FontSwapped) RestoreFont(c, r);
+        }
+
+        private static void DetachOverlay(Component c, Rec r)
+        {
+            var ut = c as Text;
+            if (ut != null && (r != null || Overlays.Count > 0)) Overlays.Detach(ut);
         }
 
         private static void RestoreFont(Component c, Rec r)
