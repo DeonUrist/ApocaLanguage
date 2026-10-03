@@ -4,8 +4,8 @@ Full translation support for **Apocalypter** (BepInEx 5 plugin). Every text the 
 item names, creature names, codex, trader prices — is looked up in a translation file of the chosen language and replaced
 just before it is drawn. The game's own data (item IDs, FSM variables, saves) is never changed, so saves work in any language.
 
-Ships with **RU**, **BG**, **DE**, **FR**, **ES**, **PT**, **PL**, **HU**, **RO**, **ZH** and **JA** (Russian, Bulgarian, German, French,
-Spanish, Brazilian Portuguese, Polish, Hungarian, Romanian, Simplified Chinese, Japanese) and **ZH-TW** (Traditional Chinese, Taiwan): ~720 texts each — menus, settings, controls, HUD,
+Ships with **RU**, **BG**, **DE**, **FR**, **ES**, **PT**, **PT-BR**, **PL**, **HU**, **RO**, **ZH** and **JA** (Russian, Bulgarian, German,
+French, Spanish, European Portuguese, Brazilian Portuguese, Polish, Hungarian, Romanian, Simplified Chinese, Japanese) and **ZH-TW** (Traditional Chinese, Taiwan): ~720 texts each — menus, settings, controls, HUD,
 tutorial, codex, items, creatures, traders. The tutorial pages' screenshots are pictures of the English UI and are not translated.
 
 ## Installation
@@ -17,7 +17,7 @@ BepInEx\plugins\ApocaLanguage\
     RU\RU.json
     DE\DE.json
     FR\FR.json
-    ES\ES.json   PT\PT.json   PL\PL.json   HU\HU.json
+    ES\ES.json   PT\PT.json   PT-BR\PT-BR.json   PL\PL.json   HU\HU.json
     BG\BG.json + Oswald-Bold.ttf + font.json
     RO\RO.json   ZH\ZH.json + font.json   ZH-TW\ZH-TW.json + font.json   JA\JA.json + font.json
 ```
@@ -114,8 +114,8 @@ A new or changed setting description simply shows in English until it is added t
 |---|---|---|---|
 | General | `Language` | `EN` | current language (`EN` + the installed folders) |
 | General | `ShowLanguageButton` | `true` | the button in the title/ESC menu |
-| Font size | `<LANG>` | `1.0` | text size of that language, 0.5 … 2 (slider in the Mods menu, applies at once; multiplies font.json `size`) |
-| Cursor text size | `<LANG>` (also `EN`) | `1.0` | extra size, 0.5 … 3, for the texts at the cursor when looking at things in the world (item names, "Take: F", "grab: lmb", trailer prompts) — on top of Font size |
+| Font size | `<LANG>` | `0.7` | text size of that language, 0.5 … 2 (slider in the Mods menu, applies at once; multiplies font.json `size`) |
+| Cursor text size | `<LANG>` (also `EN`) | `1.2` | extra size, 0.5 … 3, for the texts at the cursor when looking at things in the world (item names, "Take: F", "grab: lmb", trailer prompts) — on top of Font size |
 | Translators | `CollectStrings` | `false` | see above |
 | Translators | `DumpAllTexts` | `false` | see above (switches itself off) |
 | Translators | `ExportUiTextures` | `false` | see above (switches itself off) |

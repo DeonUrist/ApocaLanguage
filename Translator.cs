@@ -57,7 +57,7 @@ namespace ApocaLanguage
         private static readonly Dictionary<string, string> NativeNames = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
             { "EN", "English" }, { "RU", "Русский" }, { "DE", "Deutsch" }, { "FR", "Français" }, { "ES", "Español" },
-            { "IT", "Italiano" }, { "PL", "Polski" }, { "PT", "Português" }, { "PT-BR", "Português (Brasil)" }, { "BR", "Português (Brasil)" },
+            { "IT", "Italiano" }, { "PL", "Polski" }, { "PT", "Português (Portugal)" }, { "PT-PT", "Português (Portugal)" }, { "PT-BR", "Português (Brasil)" }, { "BR", "Português (Brasil)" },
             { "UK", "Українська" }, { "UA", "Українська" }, { "BE", "Беларуская" }, { "CS", "Čeština" }, { "CZ", "Čeština" }, { "SK", "Slovenčina" },
             { "TR", "Türkçe" }, { "NL", "Nederlands" }, { "SV", "Svenska" }, { "NO", "Norsk" }, { "DA", "Dansk" }, { "FI", "Suomi" },
             { "HU", "Magyar" }, { "RO", "Română" }, { "BG", "Български" }, { "SR", "Српски" }, { "HR", "Hrvatski" }, { "EL", "Ελληνικά" },

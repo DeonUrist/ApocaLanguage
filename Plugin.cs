@@ -22,7 +22,7 @@ namespace ApocaLanguage
     {
         public const string GUID = "com.denis.apocalypter.apocalanguage";
         public const string NAME = "ApocaLanguage";
-        public const string VERSION = "1.5.0";
+        public const string VERSION = "1.5.1";
 
         public static ManualLogSource Log;
         public static ConfigEntry<string> LanguageEntry;
@@ -71,12 +71,12 @@ namespace ApocaLanguage
             ShowButton = Config.Bind("General", "ShowLanguageButton", true, "Language button in the bottom-right corner of the title screen and the ESC menu");
             foreach (var l in Translator.Languages)
             {
-                var ce = Config.Bind("Cursor text size", l.Code, 1.0f, new ConfigDescription(
+                var ce = Config.Bind("Cursor text size", l.Code, 1.2f, new ConfigDescription(
                     "Size of the texts at the cursor when looking at things (item names, Take: F ...) in this language, on top of Font size (1 = normal)",
                     new AcceptableValueRange<float>(0.5f, 3.0f)));
                 CursorEntries[l.Code] = ce;
                 if (l.IsEnglish) continue;
-                var e = Config.Bind("Font size", l.Code, 1.0f, new ConfigDescription("Size of the translated text in this language (1 = normal)",
+                var e = Config.Bind("Font size", l.Code, 0.7f, new ConfigDescription("Size of the translated text in this language (1 = normal)",
                     new AcceptableValueRange<float>(0.5f, 2.0f)));
                 e.SettingChanged += (s, a) => { _sizeChangedAt = Time.unscaledTime; };
                 SizeEntries[l.Code] = e;
