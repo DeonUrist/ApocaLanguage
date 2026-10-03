@@ -53,6 +53,9 @@ Files whose name starts with `_` are tool output and are not loaded. English (`E
 ### Fonts
 If the game's font lacks a letter of the translation (Cyrillic, ä, é ...), that text is drawn with a Windows font (Arial).
 Put a `.ttf` / `.otf` file into the language folder to use that font for all translated texts of that language instead.
+Unity's UI text can only draw fonts that Windows knows: the mod registers the file for the game session and tests it; if Unity still
+cannot draw it, the log says so and the texts keep the game font / Arial (never invisible). In that case install the font in Windows
+(right-click the file → *Install for all users*) and restart the game. TextMeshPro texts use the file directly.
 
 ### Pictures with text (tutorial pages, signs)
 `<LANG>\Textures\<texture name>.png` replaces the UI picture with that name while the language is active.
