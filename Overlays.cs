@@ -38,6 +38,7 @@ namespace ApocaLanguage
         private static TMP_FontAsset _asset;
         private static LanguageInfo _lang;
         private static bool _failed, _loggedFail;
+        private static int _logged;
 
         public static int Count { get { return _ovs.Count; } }
 
@@ -197,6 +198,14 @@ namespace ApocaLanguage
             o.OrigMat = GetOwnMat(o.Src);
             o.Src.material = HideMat;
             o.Hidden = true;
+            if (_logged < 40)
+            {
+                _logged++;
+                var r = o.Src.rectTransform.rect;
+                Plugin.Log.LogInfo("Overlay " + Textures.PathOf(o.Src.transform) + ": size " + o.Src.fontSize + (o.Src.resizeTextForBestFit ? " bestfit " + o.Src.resizeTextMinSize + "-" + o.Src.resizeTextMaxSize : "")
+                    + " rect " + (int)r.width + "x" + (int)r.height + " " + o.Src.horizontalOverflow + "/" + o.Src.verticalOverflow + " align " + o.Src.alignment
+                    + " alpha " + o.Src.color.a.ToString("0.##") + "/" + o.Src.canvasRenderer.GetAlpha().ToString("0.##") + " scale " + o.Src.transform.lossyScale.x.ToString("0.###"));
+            }
             return true;
         }
 
@@ -233,8 +242,9 @@ namespace ApocaLanguage
             if (tmp.alignment != al) tmp.alignment = al;
             bool wrap = s.horizontalOverflow == HorizontalWrapMode.Wrap;
             if (tmp.enableWordWrapping != wrap) tmp.enableWordWrapping = wrap;
-            var ov = s.verticalOverflow == VerticalWrapMode.Truncate ? TextOverflowModes.Truncate : TextOverflowModes.Overflow;
-            if (tmp.overflowMode != ov) tmp.overflowMode = ov;
+            // never truncate: the game's rects are sized for its own font; a taller line (Oswald) in a Truncate rect
+            // made TextMeshPro drop the whole line (1.1.0: menu buttons, LOADING, HUD stats invisible)
+            if (tmp.overflowMode != TextOverflowModes.Overflow) tmp.overflowMode = TextOverflowModes.Overflow;
             var st = FontStyles.Normal;
             if (s.fontStyle == FontStyle.Bold || s.fontStyle == FontStyle.BoldAndItalic) st |= FontStyles.Bold;
             if (s.fontStyle == FontStyle.Italic || s.fontStyle == FontStyle.BoldAndItalic) st |= FontStyles.Italic;

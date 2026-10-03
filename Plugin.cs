@@ -21,7 +21,7 @@ namespace ApocaLanguage
     {
         public const string GUID = "com.denis.apocalypter.apocalanguage";
         public const string NAME = "ApocaLanguage";
-        public const string VERSION = "1.1.0";
+        public const string VERSION = "1.1.1";
 
         public static ManualLogSource Log;
         public static ConfigEntry<string> LanguageEntry;
