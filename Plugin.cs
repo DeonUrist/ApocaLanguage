@@ -17,11 +17,12 @@ namespace ApocaLanguage
     //  also selectable in the Apocasetter Mods menu ([General] Language).
     // =====================================================================
     [BepInPlugin(GUID, NAME, VERSION)]
+    [BepInDependency("com.denis.apocalypter.apocasetter", BepInDependency.DependencyFlags.SoftDependency)]
     public class Plugin : BaseUnityPlugin
     {
         public const string GUID = "com.denis.apocalypter.apocalanguage";
         public const string NAME = "ApocaLanguage";
-        public const string VERSION = "1.4.1";
+        public const string VERSION = "1.5.0";
 
         public static ManualLogSource Log;
         public static ConfigEntry<string> LanguageEntry;
@@ -65,17 +66,17 @@ namespace ApocaLanguage
 
             Config.Bind("General", "Apocasetter", true, "Show this mod in the Apocasetter Mods menu");
             LanguageEntry = Config.Bind("General", "Language", Translator.EN, new ConfigDescription(
-                "Game language. EN = the game's own text; the others are the folders in BepInEx\\plugins\\ApocaLanguage (" + string.Join(", ", codes) + ")",
+                "Game language. EN = the game's own text; the others come from the language folders in BepInEx\\plugins\\ApocaLanguage",
                 new AcceptableValueList<string>(codes)));
             ShowButton = Config.Bind("General", "ShowLanguageButton", true, "Language button in the bottom-right corner of the title screen and the ESC menu");
             foreach (var l in Translator.Languages)
             {
-                var ce = Config.Bind("Cursor text size", l.Code, 1.0f, new ConfigDescription(l.DisplayName
-                    + ": size of the texts at the cursor when looking at things (item names, Take: F ...), on top of [Font size] (1 = normal)",
+                var ce = Config.Bind("Cursor text size", l.Code, 1.0f, new ConfigDescription(
+                    "Size of the texts at the cursor when looking at things (item names, Take: F ...) in this language, on top of Font size (1 = normal)",
                     new AcceptableValueRange<float>(0.5f, 3.0f)));
                 CursorEntries[l.Code] = ce;
                 if (l.IsEnglish) continue;
-                var e = Config.Bind("Font size", l.Code, 1.0f, new ConfigDescription(l.DisplayName + ": size of the translated text (1 = normal)",
+                var e = Config.Bind("Font size", l.Code, 1.0f, new ConfigDescription("Size of the translated text in this language (1 = normal)",
                     new AcceptableValueRange<float>(0.5f, 2.0f)));
                 e.SettingChanged += (s, a) => { _sizeChangedAt = Time.unscaledTime; };
                 SizeEntries[l.Code] = e;
@@ -151,6 +152,7 @@ namespace ApocaLanguage
         {
             float now = Time.unscaledTime;
             try { LanguageButton.Tick(); } catch (Exception e) { Log.LogWarning("Language button: " + e.Message); }
+            ConfigUi.TryInstall();
 
             if (_fullPassAt > 0 && now >= _fullPassAt) { _fullPassAt = -1; FullPass(); }
             if (_fullPassAt2 > 0 && now >= _fullPassAt2) { _fullPassAt2 = -1; FullPass(); }

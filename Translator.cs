@@ -249,6 +249,13 @@ namespace ApocaLanguage
             return r;
         }
 
+        /// Translation in the current language as written in the file (no font.json uppercase) — for mod menus (IMGUI).
+        public static string TranslatePlain(string s)
+        {
+            if (!Active || string.IsNullOrEmpty(s) || !HasLetter(s) || s.Length > 8000) return null;
+            return Lookup(Current, s, true);
+        }
+
         /// Translation in a given language (used for the dropdown labels).
         public static string TranslateIn(LanguageInfo lang, string s)
         {

@@ -95,6 +95,13 @@ Edits to `font.json` are picked up within 2 seconds while the game runs. The RU 
 `<LANG>\Textures\<texture name>.png` replaces the UI picture with that name while the language is active.
 Use `ExportUiTextures` (below) to get the originals and their names.
 
+## Mods menu (Apocasetter)
+The Apocasetter **Mods** window is shown in the chosen language too: section names, setting names, descriptions, choice values and
+the window's own buttons. The texts come from `<LANG>\mods.json` (same format as the game file; one entry per setting name and per
+description, as written in the mods' config files). Values the player types (text fields, search) are never translated, and
+Apocasetter itself is not changed — ApocaLanguage translates its IMGUI labels/buttons/toggles while the window draws.
+A new or changed setting description simply shows in English until it is added to `mods.json`.
+
 ## Tools for translators (`[Translators]` in the config / Mods menu)
 | Setting | What it does |
 |---|---|
