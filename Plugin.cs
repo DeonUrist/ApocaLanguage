@@ -22,7 +22,7 @@ namespace ApocaLanguage
     {
         public const string GUID = "com.denis.apocalypter.apocalanguage";
         public const string NAME = "ApocaLanguage";
-        public const string VERSION = "1.5.2";
+        public const string VERSION = "1.5.3";
 
         public static ManualLogSource Log;
         public static ConfigEntry<string> LanguageEntry;
