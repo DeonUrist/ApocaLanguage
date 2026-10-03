@@ -29,12 +29,56 @@ namespace ApocaLanguage
         /// Font for UI.Text / TextMesh texts whose font lacks letters of the translation (Arial). A font file in the
         /// language folder is NOT used here: Unity's legacy text draws nothing with a font Windows does not know
         /// (1.0.2/1.0.3, Cuprum) — those languages are drawn by TextMeshPro overlays instead (Overlays.cs).
-        public static Font For(LanguageInfo lang) { return System(); }
+        public static Font For(LanguageInfo lang)
+        {
+            if (lang != null && lang.SystemFonts != null) { var f = LangSystem(lang); if (f != null) return f; }
+            return System();
+        }
+
+        private static readonly Dictionary<string, Font> _langSys = new Dictionary<string, Font>(StringComparer.OrdinalIgnoreCase);
+
+        /// font.json "system": installed Windows families (Chinese/Japanese) — Unity's UI text draws installed fonts.
+        private static Font LangSystem(LanguageInfo lang)
+        {
+            var key = string.Join("|", lang.SystemFonts);
+            Font f;
+            if (_langSys.TryGetValue(key, out f)) return f;
+            f = null;
+            try
+            {
+                var installed = new HashSet<string>(Font.GetOSInstalledFontNames(), StringComparer.OrdinalIgnoreCase);
+                var have = lang.SystemFonts.Where(n => installed.Contains(n)).ToArray();
+                if (have.Length > 0)
+                {
+                    f = Font.CreateDynamicFontFromOSFont(have, 16);
+                    f.name = have[0];
+                    f.hideFlags = HideFlags.DontUnloadUnusedAsset;
+                    UnityEngine.Object.DontDestroyOnLoad(f);
+                }
+                Plugin.Log.LogInfo(lang.Code + ": Windows font " + (f != null ? string.Join(", ", have) : "none of " + key + " installed -> Arial"));
+            }
+            catch (Exception e) { Plugin.Log.LogWarning(lang.Code + ": system font failed: " + e.Message); }
+            _langSys[key] = f;
+            return f;
+        }
+
+        /// font.json "systemFile": the same fonts as files, for TextMeshPro (which needs the file).
+        private static Font LangSystemFile(LanguageInfo lang)
+        {
+            if (lang == null || lang.SystemFiles == null) return null;
+            var dir = Path.Combine(Environment.GetEnvironmentVariable("WINDIR") ?? @"C:\Windows", "Fonts");
+            foreach (var n in lang.SystemFiles)
+            {
+                var p = Path.Combine(dir, n);
+                if (File.Exists(p)) return Raw(p);
+            }
+            return null;
+        }
 
         public static bool Forced(LanguageInfo lang) { return false; }
 
         /// Font the TMP fallback asset is built from (TMP reads the file itself, so the raw path font is right there).
-        private static Font TmpSource(LanguageInfo lang) { return System(); }
+        private static Font TmpSource(LanguageInfo lang) { return LangSystemFile(lang) ?? System(); }
 
         public static Font System()
         {

@@ -21,6 +21,8 @@ namespace ApocaLanguage
         public float Thickness;      // "thickness": 0..0.5 extra weight (TextMeshPro face dilate)
         public float Outline;        // "outline": 0..0.5 dark outline width
         public float Spacing;        // "spacing": extra letter spacing (TextMeshPro units, can be negative)
+        public string[] SystemFonts; // "system": installed Windows font families used instead of Arial (e.g. Microsoft YaHei for Chinese)
+        public string[] SystemFiles; // "systemFile": their files in C:\Windows\Fonts (for TextMeshPro texts)
         public Dictionary<string, string> Map = new Dictionary<string, string>(StringComparer.Ordinal);
         public Dictionary<string, string> MapIgnoreCase = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         public Dictionary<string, string> Reverse = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -59,7 +61,7 @@ namespace ApocaLanguage
             { "UK", "Українська" }, { "UA", "Українська" }, { "BE", "Беларуская" }, { "CS", "Čeština" }, { "CZ", "Čeština" }, { "SK", "Slovenčina" },
             { "TR", "Türkçe" }, { "NL", "Nederlands" }, { "SV", "Svenska" }, { "NO", "Norsk" }, { "DA", "Dansk" }, { "FI", "Suomi" },
             { "HU", "Magyar" }, { "RO", "Română" }, { "BG", "Български" }, { "SR", "Српски" }, { "HR", "Hrvatski" }, { "EL", "Ελληνικά" },
-            { "ZH", "中文" }, { "CN", "中文" }, { "JA", "日本語" }, { "JP", "日本語" }, { "KO", "한국어" }, { "KK", "Қазақша" }, { "LT", "Lietuvių" },
+            { "ZH", "简体中文" }, { "CN", "简体中文" }, { "JA", "日本語" }, { "JP", "日本語" }, { "KO", "한국어" }, { "KK", "Қазақша" }, { "LT", "Lietuvių" },
             { "LV", "Latviešu" }, { "ET", "Eesti" }, { "KA", "ქართული" }, { "HY", "Հայերեն" }, { "AZ", "Azərbaycan" }, { "UZ", "Oʻzbek" },
         };
 
@@ -122,6 +124,7 @@ namespace ApocaLanguage
             lang.Map.Clear(); lang.MapIgnoreCase.Clear(); lang.Reverse.Clear();
             lang.FontFile = null;
             lang.Upper = false; lang.FontSize = 1f; lang.FontWidth = 1f; lang.Thickness = 0f; lang.Outline = 0f; lang.Spacing = 0f;
+            lang.SystemFonts = null; lang.SystemFiles = null;
             if (lang.IsEnglish) return;
             lang.Stamp = StampOf(lang);
             int files = 0, entries = 0, empty = 0;
@@ -167,6 +170,12 @@ namespace ApocaLanguage
                 + (empty > 0 ? ", " + empty + " still empty" : "") + (lang.FontFile != null ? ", font " + Path.GetFileName(lang.FontFile) : ""));
         }
 
+        private static string[] SplitList(string v)
+        {
+            var a = v.Split(new[] { ',', ';', '|' }, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()).Where(x => x.Length > 0).ToArray();
+            return a.Length > 0 ? a : null;
+        }
+
         private static void LoadFontStyle(LanguageInfo lang, string path)
         {
             try
@@ -192,6 +201,8 @@ namespace ApocaLanguage
                         case "thickness": if (num) lang.Thickness = Math.Max(-0.5f, Math.Min(1f, x)); break;
                         case "outline": if (num) lang.Outline = Math.Max(0f, Math.Min(1f, x)); break;
                         case "spacing": if (num) lang.Spacing = x; break;
+                        case "system": lang.SystemFonts = SplitList(v); break;
+                        case "systemfile": lang.SystemFiles = SplitList(v); break;
                     }
                 }
             }

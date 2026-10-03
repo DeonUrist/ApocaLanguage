@@ -4,8 +4,8 @@ Full translation support for **Apocalypter** (BepInEx 5 plugin). Every text the 
 item names, creature names, codex, trader prices — is looked up in a translation file of the chosen language and replaced
 just before it is drawn. The game's own data (item IDs, FSM variables, saves) is never changed, so saves work in any language.
 
-Ships with **RU**, **BG**, **DE**, **FR**, **ES**, **PT**, **PL** and **HU** (Russian, Bulgarian, German, French, Spanish, Brazilian
-Portuguese, Polish, Hungarian): ~720 texts each — menus, settings, controls, HUD,
+Ships with **RU**, **BG**, **DE**, **FR**, **ES**, **PT**, **PL**, **HU**, **RO**, **ZH** and **JA** (Russian, Bulgarian, German, French,
+Spanish, Brazilian Portuguese, Polish, Hungarian, Romanian, Simplified Chinese, Japanese): ~720 texts each — menus, settings, controls, HUD,
 tutorial, codex, items, creatures, traders. The tutorial pages' screenshots are pictures of the English UI and are not translated.
 
 ## Installation
@@ -19,6 +19,7 @@ BepInEx\plugins\ApocaLanguage\
     FR\FR.json
     ES\ES.json   PT\PT.json   PL\PL.json   HU\HU.json
     BG\BG.json + Oswald-Bold.ttf + font.json
+    RO\RO.json   ZH\ZH.json + font.json   JA\JA.json + font.json
 ```
 
 ## Choosing a language
@@ -80,6 +81,12 @@ place but invisible). Its look is set by an optional `font.json` in the same fol
 | `thickness` | extra weight, 0 … 0.5 (negative = thinner) |
 | `outline` | dark outline width, 0 … 0.5 |
 | `spacing` | extra space between letters (can be negative) |
+| `system` | installed Windows fonts used instead of Arial for that language's texts (no font file needed), e.g. `"Microsoft YaHei, SimHei"` |
+| `systemFile` | the same fonts' files in `C:\Windows\Fonts` (TextMeshPro texts need the file), e.g. `"msyh.ttc, simhei.ttf"` |
+
+Chinese and Japanese use the fonts every Windows already has (Microsoft YaHei / SimHei; Yu Gothic / Meiryo / MS Gothic) through
+`system` + `systemFile` — nothing to ship. To give them a styled look like RU, put a CJK font file (e.g. Noto Sans SC / Noto Sans JP Bold)
+into the folder and name it in `file`.
 
 Edits to `font.json` are picked up within 2 seconds while the game runs. The RU folder ships **Oswald Bold** (SIL Open Font License,
 `Oswald-OFL.txt`); BG uses the same font and style.
