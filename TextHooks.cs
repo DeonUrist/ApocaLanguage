@@ -27,6 +27,8 @@ namespace ApocaLanguage
             public Font OrigFont;
             public bool FontSwapped;
             public int Gen;
+            public bool Sized;
+            public int OrigSize, OrigMin, OrigMax;
         }
 
         private static readonly Dictionary<int, Rec> _recs = new Dictionary<int, Rec>();
@@ -188,6 +190,7 @@ namespace ApocaLanguage
             {
                 if (Overlays.For(lang)) { RestoreFont(c, r); Overlays.Attach(ut); return; }   // drawn by TextMeshPro with the language's font
                 if (Overlays.Count > 0) Overlays.Detach(ut);
+                ApplySize(ut, r, lang);
             }
             Font cur = ut != null ? ut.font : tm.font;
             Font want = null;
@@ -212,8 +215,32 @@ namespace ApocaLanguage
             if (ut != null && (r != null || Overlays.Count > 0)) Overlays.Detach(ut);
         }
 
+        /// [Font size] setting for languages drawn with the game's own text (overlay languages scale in Overlays.Sync).
+        private static void ApplySize(Text t, Rec r, LanguageInfo lang)
+        {
+            float k = lang != null ? lang.FontSize * Plugin.UserSize(lang.Code) : 1f;
+            if (Math.Abs(k - 1f) < 0.001f) { RestoreSize(t, r); return; }
+            if (!r.Sized) { r.OrigSize = t.fontSize; r.OrigMin = t.resizeTextMinSize; r.OrigMax = t.resizeTextMaxSize; r.Sized = true; }
+            int fs = Math.Max(1, (int)Math.Round(r.OrigSize * k));
+            if (t.fontSize != fs) t.fontSize = fs;
+            if (t.resizeTextForBestFit)
+            {
+                int mn = Math.Max(1, (int)Math.Round(r.OrigMin * k)), mx = Math.Max(1, (int)Math.Round(r.OrigMax * k));
+                if (t.resizeTextMinSize != mn) t.resizeTextMinSize = mn;
+                if (t.resizeTextMaxSize != mx) t.resizeTextMaxSize = mx;
+            }
+        }
+
+        private static void RestoreSize(Text t, Rec r)
+        {
+            if (r == null || !r.Sized || t == null) return;
+            r.Sized = false;
+            t.fontSize = r.OrigSize; t.resizeTextMinSize = r.OrigMin; t.resizeTextMaxSize = r.OrigMax;
+        }
+
         private static void RestoreFont(Component c, Rec r)
         {
+            RestoreSize(c as Text, r);
             if (!r.FontSwapped) return;
             r.FontSwapped = false;
             if (r.OrigFont != null) SetFont(c, r.OrigFont);

@@ -4,7 +4,8 @@ Full translation support for **Apocalypter** (BepInEx 5 plugin). Every text the 
 item names, creature names, codex, trader prices — is looked up in a translation file of the chosen language and replaced
 just before it is drawn. The game's own data (item IDs, FSM variables, saves) is never changed, so saves work in any language.
 
-Ships with **RU**, **DE**, **FR** and **ES** (Russian, German, French, Spanish): ~720 texts each — menus, settings, controls, HUD,
+Ships with **RU**, **BG**, **DE**, **FR**, **ES**, **PT**, **PL** and **HU** (Russian, Bulgarian, German, French, Spanish, Brazilian
+Portuguese, Polish, Hungarian): ~720 texts each — menus, settings, controls, HUD,
 tutorial, codex, items, creatures, traders. The tutorial pages' screenshots are pictures of the English UI and are not translated.
 
 ## Installation
@@ -16,7 +17,8 @@ BepInEx\plugins\ApocaLanguage\
     RU\RU.json
     DE\DE.json
     FR\FR.json
-    ES\ES.json
+    ES\ES.json   PT\PT.json   PL\PL.json   HU\HU.json
+    BG\BG.json + Oswald-Bold.ttf + font.json
 ```
 
 ## Choosing a language
@@ -80,7 +82,7 @@ place but invisible). Its look is set by an optional `font.json` in the same fol
 | `spacing` | extra space between letters (can be negative) |
 
 Edits to `font.json` are picked up within 2 seconds while the game runs. The RU folder ships **Oswald Bold** (SIL Open Font License,
-`Oswald-OFL.txt`).
+`Oswald-OFL.txt`); BG uses the same font and style.
 
 ### Pictures with text (tutorial pages, signs)
 `<LANG>\Textures\<texture name>.png` replaces the UI picture with that name while the language is active.
@@ -98,6 +100,7 @@ Use `ExportUiTextures` (below) to get the originals and their names.
 |---|---|---|---|
 | General | `Language` | `EN` | current language (`EN` + the installed folders) |
 | General | `ShowLanguageButton` | `true` | the button in the title/ESC menu |
+| Font size | `<LANG>` | `1.0` | text size of that language, 0.5 … 2 (slider in the Mods menu, applies at once; multiplies font.json `size`) |
 | Translators | `CollectStrings` | `false` | see above |
 | Translators | `DumpAllTexts` | `false` | see above (switches itself off) |
 | Translators | `ExportUiTextures` | `false` | see above (switches itself off) |

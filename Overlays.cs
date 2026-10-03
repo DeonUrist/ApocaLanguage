@@ -221,7 +221,7 @@ namespace ApocaLanguage
             var text = s.text;
             if (!ReferenceEquals(text, o.Last)) { tmp.text = text; o.Last = text; }
 
-            float k = lang != null ? lang.FontSize : 1f;
+            float k = lang != null ? lang.FontSize * Plugin.UserSize(lang.Code) : 1f;
             var c = s.color;
             c.a *= s.canvasRenderer.GetAlpha();
             if (tmp.color != c) tmp.color = c;

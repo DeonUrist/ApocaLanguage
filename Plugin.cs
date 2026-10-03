@@ -21,7 +21,7 @@ namespace ApocaLanguage
     {
         public const string GUID = "com.denis.apocalypter.apocalanguage";
         public const string NAME = "ApocaLanguage";
-        public const string VERSION = "1.1.1";
+        public const string VERSION = "1.2.0";
 
         public static ManualLogSource Log;
         public static ConfigEntry<string> LanguageEntry;
@@ -31,6 +31,18 @@ namespace ApocaLanguage
         private static float _nextReloadCheck, _nextSafety, _nextPrune;
         private static float _fullPassAt = -1f, _fullPassAt2 = -1f;
         private static bool _dumpRequested, _exportRequested;
+        private static float _sizeChangedAt = -1f;
+        public static readonly System.Collections.Generic.Dictionary<string, ConfigEntry<float>> SizeEntries =
+            new System.Collections.Generic.Dictionary<string, ConfigEntry<float>>(StringComparer.OrdinalIgnoreCase);
+
+        /// [Font size] <LANG> from the config (Mods menu), 1 when unset.
+        public static float UserSize(string code)
+        {
+            ConfigEntry<float> e;
+            if (code == null || !SizeEntries.TryGetValue(code, out e)) return 1f;
+            var v = e.Value;
+            return v < 0.5f ? 0.5f : v > 2f ? 2f : v;
+        }
 
         private void Awake()
         {
@@ -44,6 +56,14 @@ namespace ApocaLanguage
                 "Game language. EN = the game's own text; the others are the folders in BepInEx\\plugins\\ApocaLanguage (" + string.Join(", ", codes) + ")",
                 new AcceptableValueList<string>(codes)));
             ShowButton = Config.Bind("General", "ShowLanguageButton", true, "Language button in the bottom-right corner of the title screen and the ESC menu");
+            foreach (var l in Translator.Languages)
+            {
+                if (l.IsEnglish) continue;
+                var e = Config.Bind("Font size", l.Code, 1.0f, new ConfigDescription(l.DisplayName + ": size of the translated text (1 = normal)",
+                    new AcceptableValueRange<float>(0.5f, 2.0f)));
+                e.SettingChanged += (s, a) => { _sizeChangedAt = Time.unscaledTime; };
+                SizeEntries[l.Code] = e;
+            }
             CollectStrings = Config.Bind("Translators", "CollectStrings", false,
                 "While on, every English text the game shows is written to _collected.json, and the ones without a translation in the current language to <LANG>\\_missing.json");
             DumpNow = Config.Bind("Translators", "DumpAllTexts", false,
@@ -138,6 +158,13 @@ namespace ApocaLanguage
                 _nextSafety = now + 2f;
                 if (Translator.Active || Collector.On) { try { Texts.Refresh(false, Translator.Current, false); } catch (Exception e) { Log.LogWarning("Refresh: " + e.Message); } }
                 if (Textures.Any) { try { Textures.Refresh(false); } catch { } }
+            }
+
+            // [Font size] changed in the Mods menu: overlays follow by themselves, the game's own texts are re-applied (debounced)
+            if (_sizeChangedAt > 0 && now - _sizeChangedAt > 0.3f)
+            {
+                _sizeChangedAt = -1f;
+                try { if (Translator.Active) Texts.Refresh(true, Translator.Current, true); } catch (Exception e) { Log.LogWarning("Size refresh: " + e.Message); }
             }
 
             if (now >= _nextPrune) { _nextPrune = now + 15f; Texts.Prune(); }
