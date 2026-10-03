@@ -4,7 +4,8 @@ Full translation support for **Apocalypter** (BepInEx 5 plugin). Every text the 
 item names, creature names, codex, trader prices — is looked up in a translation file of the chosen language and replaced
 just before it is drawn. The game's own data (item IDs, FSM variables, saves) is never changed, so saves work in any language.
 
-Ships with **RU**, **DE** and **FR** folders (starter files; the full translations are being written).
+Ships with **RU**, **DE**, **FR** and **ES** (Russian, German, French, Spanish): ~720 texts each — menus, settings, controls, HUD,
+tutorial, codex, items, creatures, traders. The tutorial pages' screenshots are pictures of the English UI and are not translated.
 
 ## Installation
 Copy the `ApocaLanguage` folder into `BepInEx\plugins\`:
@@ -15,10 +16,11 @@ BepInEx\plugins\ApocaLanguage\
     RU\RU.json
     DE\DE.json
     FR\FR.json
+    ES\ES.json
 ```
 
 ## Choosing a language
-- **LANGUAGE** button in the bottom-right corner of the title screen and the ESC menu → click it, pick a language from the list.
+- **LANGUAGE** button in the bottom-right corner of the title screen and the ESC menu (above the game's own CREDITS / DEBUG buttons there) → click it, pick a language from the list.
 - Or in the Apocasetter **Mods** menu (`[General] Language`), or in `BepInEx\config\com.denis.apocalypter.apocalanguage.cfg`.
 
 The change is instant — no restart.

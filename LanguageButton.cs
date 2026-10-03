@@ -30,6 +30,7 @@ namespace ApocaLanguage
             public bool Open;
             public int LabelGen = -1;
             public Font OrigFont;
+            public float BaseY = Margin;
         }
 
         private static readonly List<Slot> _slots = new List<Slot>();
@@ -78,10 +79,55 @@ namespace ApocaLanguage
                 if (!vis && slot.Open) Close(slot);
                 if (vis)
                 {
+                    float by = ClearY(slot);
+                    if (Mathf.Abs(by - slot.BaseY) > 0.5f) { slot.BaseY = by; Place(slot); }
                     slot.Button.transform.SetAsLastSibling();
                     foreach (var i in slot.Items) if (i != null) i.transform.SetAsLastSibling();
                     if (slot.LabelGen != Translator.Generation) { UpdateLabel(slot); slot.LabelGen = Translator.Generation; }
                 }
+            }
+        }
+
+        /// Height above the bottom edge where the button does not cover any game button in that corner
+        /// (the ESC menu has CREDITS / DEBUG there).
+        private static readonly Vector3[] _corners = new Vector3[4];
+        private static float ClearY(Slot slot)
+        {
+            var crt = slot.Canvas.GetComponent<RectTransform>();
+            if (crt == null) return Margin;
+            var cr = crt.rect;
+            float right = cr.xMax - Margin, left = right - slot.Size.x;
+            float y = Margin;
+            foreach (var b in slot.GameButtons)
+            {
+                if (b == null || !b.isActiveAndEnabled) continue;
+                var rt = b.transform as RectTransform;
+                if (rt == null) continue;
+                rt.GetWorldCorners(_corners);
+                float minX = float.MaxValue, maxX = float.MinValue, minY = float.MaxValue, maxY = float.MinValue;
+                for (int i = 0; i < 4; i++)
+                {
+                    var p = crt.InverseTransformPoint(_corners[i]);
+                    minX = Mathf.Min(minX, p.x); maxX = Mathf.Max(maxX, p.x); minY = Mathf.Min(minY, p.y); maxY = Mathf.Max(maxY, p.y);
+                }
+                if (maxX - minX < 1f || maxY - minY < 1f) continue;
+                if (maxX <= left || minX >= right) continue;                 // not in our column
+                float bottom = minY - cr.yMin, top = maxY - cr.yMin;
+                if (bottom > cr.height * 0.4f) continue;                     // not in the bottom part of the screen
+                y = Mathf.Max(y, top + 12f);
+            }
+            return y;
+        }
+
+        private static void Place(Slot slot)
+        {
+            var rt = slot.Button.GetComponent<RectTransform>();
+            rt.anchoredPosition = new Vector2(-Margin, slot.BaseY);
+            for (int i = 0; i < slot.Items.Count; i++)
+            {
+                if (slot.Items[i] == null) continue;
+                var irt = slot.Items[i].GetComponent<RectTransform>();
+                irt.anchoredPosition = new Vector2(-Margin, slot.BaseY + (i + 1) * (slot.Size.y + Gap));
             }
         }
 
@@ -214,6 +260,7 @@ namespace ApocaLanguage
                 item.SetActive(true);
                 slot.Items.Add(item);
             }
+            Place(slot);
         }
 
         private static void Close(Slot slot)
